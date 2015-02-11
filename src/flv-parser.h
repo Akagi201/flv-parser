@@ -21,29 +21,37 @@ enum tag_types {
     TAGTYPE_SCRIPTDATAOBJECT = 18
 };
 
+/*
+ * @brief flv file header 9 bytes
+ */
 struct flv_header {
     uint8_t signature[3];
     uint8_t version;
     uint8_t type_flags;
-    uint32_t data_offset;
+    uint32_t data_offset; // header size, always 9
 } __attribute__((__packed__));
 
 typedef struct flv_header flv_header_t;
 
-typedef struct flv_tag {
+/*
+ * @brief flv tag general header 11 bytes
+ */
+struct flv_tag {
     uint8_t tag_type;
     uint32_t data_size;
     uint32_t timestamp;
     uint8_t timestamp_ext;
-    uint32_t stream_id;
+    uint8_t stream_id;
     void *data; // will point to an audio_tag or video_tag
-} flv_tag_t;
+} __attribute__((__packed__));
+
+typedef struct flv_tag flv_tag_t;
 
 typedef struct audio_tag {
-    uint8_t sound_format;
-    uint8_t sound_rate;
-    uint8_t sound_size;
-    uint8_t sound_type;
+    uint8_t sound_format; // 0 - raw, 1 - ADPCM, 2 - MP3, 4 - Nellymoser 16 KHz mono, 5 - Nellymoser 8 KHz mono, 10 - AAC, 11 - Speex
+    uint8_t sound_rate; // 0 - 5.5 KHz, 1 - 11 KHz, 2 - 22 KHz, 3 - 44 KHz
+    uint8_t sound_size; // 0 - 8 bit, 1 - 16 bit
+    uint8_t sound_type; // 0 - mono, 1 - stereo
     void *data;
 } audio_tag_t;
 
@@ -54,7 +62,7 @@ typedef struct video_tag {
 } video_tag_t;
 
 typedef struct avc_video_tag {
-    uint8_t avc_packet_type;
+    uint8_t avc_packet_type; // 0x00 - AVC sequence header, 0x01 - AVC NALU
     uint32_t composition_time;
     void *data;
 } avc_video_tag_t;

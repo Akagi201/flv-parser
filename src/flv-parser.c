@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "flv-parser.h"
 
@@ -76,14 +77,19 @@ const char *avc_packet_types[] = {
 
 FILE *g_infile;
 
-void die() {
+void die(void) {
     printf("Error!\n");
     exit(-1);
 }
 
-// recover values that are less than one byte
+/*
+ * @brief read bits from 1 byte
+ * @param[in] value: 1 byte to analysize
+ * @param[in] start_bit: start from the low bit side
+ * @param[in] count: number of bits
+ */
 uint8_t flv_get_bits(uint8_t value, uint8_t start_bit, uint8_t count) {
-    uint8_t mask;
+    uint8_t mask = 0;
 
     mask = (uint8_t) (((1 << count) - 1) << start_bit);
     return (mask & value) >> start_bit;
@@ -107,15 +113,18 @@ void flv_print_header(flv_header_t *flv_header) {
     }
     printf("  Data offset: %lu\n", (unsigned long) flv_header->data_offset);
 
+    return;
 }
 
 size_t fread_1(uint8_t *ptr) {
+    assert(NULL != ptr);
     return fread(ptr, 1, 1, g_infile);
 }
 
 size_t fread_3(uint32_t *ptr) {
-    size_t count;
-    uint8_t bytes[3];
+    assert(NULL != ptr);
+    size_t count = NULL;
+    uint8_t bytes[3] = {0};
     *ptr = 0;
     count = fread(bytes, 3, 1, g_infile);
     *ptr = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
@@ -123,26 +132,35 @@ size_t fread_3(uint32_t *ptr) {
 }
 
 size_t fread_4(uint32_t *ptr) {
-    size_t count;
-    uint8_t bytes[4];
+    assert(NULL != ptr);
+    size_t count = 0;
+    uint8_t bytes[4] = {0};
     *ptr = 0;
     count = fread(bytes, 4, 1, g_infile);
     *ptr = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
     return count * 4;
 }
 
+/*
+ * @brief skip 4 bytes in the file stream
+ */
 size_t fread_4s(uint32_t *ptr) {
-    size_t count;
-    uint8_t bytes[4];
+    assert(NULL != ptr);
+    size_t count = 0;
+    uint8_t bytes[4] = {0};
     *ptr = 0;
     count = fread(bytes, 4, 1, g_infile);
     return count * 4;
 }
 
+/*
+ * @brief read audio tag
+ */
 audio_tag_t *read_audio_tag(flv_tag_t *flv_tag) {
-    size_t count;
-    uint8_t byte;
-    audio_tag_t *tag;
+    assert(NULL != flv_tag);
+    size_t count = 0;
+    uint8_t byte = 0;
+    audio_tag_t *tag = NULL;
 
     tag = malloc(sizeof(audio_tag_t));
     count = fread_1(&byte);
@@ -160,15 +178,18 @@ audio_tag_t *read_audio_tag(flv_tag_t *flv_tag) {
     printf("    Sound type: %u - %s\n", tag->sound_type, sound_types[tag->sound_type]);
 
     tag->data = malloc((size_t) flv_tag->data_size - 1);
-    count = fread(tag->data, 1, (size_t) flv_tag->data_size - 1, g_infile);
+    count = fread(tag->data, 1, (size_t) flv_tag->data_size - 1, g_infile); // -1: audo data tag header
 
     return tag;
 }
 
+/*
+ * @brief read video tag
+ */
 video_tag_t *read_video_tag(flv_tag_t *flv_tag) {
-    size_t count;
-    uint8_t byte;
-    video_tag_t *tag;
+    size_t count = 0;
+    uint8_t byte = 0;
+    video_tag_t *tag = NULL;
 
     tag = malloc(sizeof(video_tag_t));
 
@@ -193,13 +214,14 @@ video_tag_t *read_video_tag(flv_tag_t *flv_tag) {
 }
 
 avc_video_tag_t *read_avc_video_tag(video_tag_t *video_tag, flv_tag_t *flv_tag, uint32_t data_size) {
-    size_t count;
-    avc_video_tag_t *tag;
+    size_t count = 0;
+    avc_video_tag_t *tag = NULL;
 
     tag = malloc(sizeof(avc_video_tag_t));
 
     count = fread_1(&(tag->avc_packet_type));
     count += fread_4s(&(tag->composition_time));
+    //count += fread_3(tag->composition_time);
 
     printf("    AVC video tag:\n");
     printf("      AVC packet type: %u - %s\n", tag->avc_packet_type, avc_packet_types[tag->avc_packet_type]);

@@ -64,6 +64,7 @@ typedef struct video_tag {
 typedef struct avc_video_tag {
     uint8_t avc_packet_type; // 0x00 - AVC sequence header, 0x01 - AVC NALU
     uint32_t composition_time;
+    uint32_t nalu_len;
     void *data;
 } avc_video_tag_t;
 

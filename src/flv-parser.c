@@ -75,7 +75,7 @@ const char *avc_packet_types[] = {
         "AVC end of sequence (lower level NALU sequence ender is not required or supported)"
 };
 
-FILE *g_infile;
+static FILE *g_infile;
 
 void die(void) {
     printf("Error!\n");
@@ -213,6 +213,9 @@ video_tag_t *read_video_tag(flv_tag_t *flv_tag) {
     return tag;
 }
 
+/*
+ * @brief read AVC video tag
+ */
 avc_video_tag_t *read_avc_video_tag(video_tag_t *video_tag, flv_tag_t *flv_tag, uint32_t data_size) {
     size_t count = 0;
     avc_video_tag_t *tag = NULL;
@@ -220,19 +223,20 @@ avc_video_tag_t *read_avc_video_tag(video_tag_t *video_tag, flv_tag_t *flv_tag, 
     tag = malloc(sizeof(avc_video_tag_t));
 
     count = fread_1(&(tag->avc_packet_type));
-    count += fread_4s(&(tag->composition_time));
-    //count += fread_3(tag->composition_time);
+    //count += fread_4s(&(tag->composition_time));
+    count += fread_3(&(tag->composition_time));
+    count += fread_4(&(tag->nalu_len));
 
     printf("    AVC video tag:\n");
     printf("      AVC packet type: %u - %s\n", tag->avc_packet_type, avc_packet_types[tag->avc_packet_type]);
     printf("      AVC composition time: %i\n", tag->composition_time);
+    printf("      AVC nalu length: %i\n", tag->nalu_len);
 
     tag->data = malloc((size_t) data_size - count);
     count = fread(tag->data, 1, (size_t) data_size - count, g_infile);
 
     return tag;
 }
-
 
 void flv_parser_init(FILE *in_file) {
     g_infile = in_file;
@@ -282,8 +286,8 @@ void flv_free_tag(flv_tag_t *tag) {
 }
 
 int flv_read_header(void) {
-    size_t count;
-    int i;
+    size_t count = 0;
+    int i = 0;
     flv_header_t *flv_header;
 
     flv_header = malloc(sizeof(flv_header_t));

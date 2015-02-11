@@ -123,7 +123,7 @@ size_t fread_1(uint8_t *ptr) {
 
 size_t fread_3(uint32_t *ptr) {
     assert(NULL != ptr);
-    size_t count = NULL;
+    size_t count = 0;
     uint8_t bytes[3] = {0};
     *ptr = 0;
     count = fread(bytes, 3, 1, g_infile);

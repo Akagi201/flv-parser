@@ -288,16 +288,14 @@ void flv_free_tag(flv_tag_t *tag) {
 int flv_read_header(void) {
     size_t count = 0;
     int i = 0;
-    flv_header_t *flv_header;
+    flv_header_t *flv_header = NULL;
 
     flv_header = malloc(sizeof(flv_header_t));
     count = fread(flv_header, 1, sizeof(flv_header_t), g_infile);
 
     // XXX strncmp
     for (i = 0; i < strlen(flv_signature); i++) {
-        if (flv_header->signature[i] != flv_signature[i]) {
-            die();
-        }
+        assert(flv_header->signature[i] == flv_signature[i]);
     }
 
     flv_header->data_offset = ntohl(flv_header->data_offset);
@@ -309,6 +307,7 @@ int flv_read_header(void) {
 }
 
 void print_general_tag_info(flv_tag_t *tag) {
+    assert(NULL != tag);
     printf("  Data size: %lu\n", (unsigned long) tag->data_size);
     printf("  Timestamp: %lu\n", (unsigned long) tag->timestamp);
     printf("  Timestamp extended: %u\n", tag->timestamp_ext);
@@ -318,19 +317,19 @@ void print_general_tag_info(flv_tag_t *tag) {
 }
 
 flv_tag_t *flv_read_tag(void) {
-    size_t count;
-    uint32_t prev_tag_size;
-    flv_tag_t *tag;
+    size_t count = 0;
+    uint32_t prev_tag_size = 0;
+    flv_tag_t *tag = NULL;
 
     tag = malloc(sizeof(flv_tag_t));
 
     count = fread_4(&prev_tag_size);
 
-    // Start reading next tag
-    count = fread_1(&(tag->tag_type));
     if (feof(g_infile)) {
         return NULL;
     }
+    // Start reading next tag
+    count = fread_1(&(tag->tag_type));
     count = fread_3(&(tag->data_size));
     count = fread_3(&(tag->timestamp));
     count = fread_1(&(tag->timestamp_ext));
@@ -363,10 +362,12 @@ flv_tag_t *flv_read_tag(void) {
             die();
     }
 
+    #if 0
     // Did we reach end of file?
     if (feof(g_infile)) {
         return NULL;
     }
+    #endif
 
     return tag;
 }

@@ -41,9 +41,9 @@ struct flv_tag {
     uint32_t data_size;
     uint32_t timestamp;
     uint8_t timestamp_ext;
-    uint8_t stream_id;
+    uint32_t stream_id;
     void *data; // will point to an audio_tag or video_tag
-} __attribute__((__packed__));
+};
 
 typedef struct flv_tag flv_tag_t;
 

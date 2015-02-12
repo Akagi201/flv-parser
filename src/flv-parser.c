@@ -348,7 +348,6 @@ flv_tag_t *flv_read_tag(void) {
         case TAGTYPE_VIDEODATA:
             printf("Video data\n");
             print_general_tag_info(tag);
-            tag->data = malloc((size_t) tag->data_size);
             tag->data = (void *) read_video_tag(tag);
             break;
         case TAGTYPE_SCRIPTDATAOBJECT:
